@@ -49,7 +49,6 @@ export async function compressToWebp(file: File, maxBytes = MAX_UPLOAD_BYTES): P
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Browser tidak mendukung kompresi gambar");
-      ctx.drawImage(document.createElement("canvas"), 0, 0);
       source.draw(ctx, width, height);
 
       for (const quality of [0.82, 0.7, 0.6, 0.5, 0.4]) {
