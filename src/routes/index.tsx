@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { DoorClosed, Wrench, AlertTriangle, Boxes } from "lucide-react";
+import { DoorClosed, Wrench, AlertTriangle, Boxes, Wallet } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
-import { allRoomItemsQuery, roomsQuery, sharedItemsQuery } from "@/lib/inventory";
+import { ConditionBadge } from "@/components/ConditionBadge";
+import {
+  allRoomItemsQuery,
+  conditionsQuery,
+  formatRupiah,
+  roomsQuery,
+  sharedItemsQuery,
+} from "@/lib/inventory";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
