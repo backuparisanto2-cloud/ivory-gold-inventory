@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Minus, Plus, Pencil, Trash2, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { ConditionBadge } from "@/components/ConditionBadge";
+import { InventoryItemCard } from "@/components/InventoryItemCard";
 import { ItemFormDialog } from "@/components/ItemFormDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +28,7 @@ import {
   seedRoomItems,
   updateRoomItem,
 } from "@/lib/inventory";
+import { formInitial, itemPayload } from "@/lib/item-payload";
 
 export const Route = createFileRoute("/kamar/$nomor")({
   head: ({ params }) => ({
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/kamar/$nomor")({
       { title: `Kamar ${params.nomor} — Inventaris Lavin Kost` },
       {
         name: "description",
-        content: `Inventaris fasilitas kamar ${params.nomor} Lavin Kost Purwokerto: tambah, edit, dan kurangi barang.`,
+        content: `Inventaris fasilitas kamar ${params.nomor} Lavin Kost Purwokerto: vendor, harga, garansi, foto barang, dan nota.`,
       },
       { property: "og:title", content: `Kamar ${params.nomor} — Inventaris Lavin Kost` },
       {
@@ -47,12 +50,16 @@ export const Route = createFileRoute("/kamar/$nomor")({
 
 function RoomDetail() {
   const { nomor } = Route.useParams();
+  const [keyword, setKeyword] = useState("");
   const queryClient = useQueryClient();
   const rooms = useQuery(roomsQuery);
   const items = useQuery(allRoomItemsQuery);
 
   const room = (rooms.data ?? []).find((r) => r.number === nomor);
   const roomItems = (items.data ?? []).filter((i) => i.room_id === room?.id);
+  const list = roomItems.filter((i) =>
+    i.name.toLowerCase().includes(keyword.trim().toLowerCase()),
+  );
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["room_items"] });
 
@@ -67,131 +74,105 @@ function RoomDetail() {
       title={room ? `Kamar ${room.number}` : `Kamar ${nomor}`}
       subtitle={room ? `Lantai ${room.floor} · ${roomItems.length} jenis barang` : undefined}
     >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to="/kamar"
-          search={{ lantai: room?.floor ?? 1 }}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke daftar kamar
-        </Link>
+      <Link
+        to="/kamar"
+        search={{ lantai: room?.floor ?? 1 }}
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" /> Kembali ke daftar kamar
+      </Link>
 
-        <div className="flex gap-2">
-          {roomItems.length === 0 && room ? (
-            <Button
-              variant="outline"
-              onClick={() => mutate.mutate(() => seedRoomItems(room.id))}
-              className="border-gold-line"
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> Isi item standar
-            </Button>
-          ) : null}
-          {room ? (
-            <ItemFormDialog
-              trigger={
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Tambah barang
+      {room ? (
+        <div className="sticky top-0 z-10 -mx-4 mt-3 bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
+          <div className="grid gap-2 sm:flex sm:items-center sm:justify-between">
+            <div className="relative min-w-0 sm:max-w-xs sm:flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Cari barang kamar ini..."
+                className="h-11 pl-9"
+                aria-label="Cari barang"
+              />
+            </div>
+            <div className="flex gap-2">
+              {roomItems.length === 0 ? (
+                <Button
+                  variant="outline"
+                  onClick={() => mutate.mutate(() => seedRoomItems(room.id))}
+                  className="h-11 flex-1 border-gold-line sm:flex-none"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" /> Item standar
                 </Button>
-              }
-              title="Tambah barang kamar"
-              description={`Barang baru untuk kamar ${room.number}.`}
-              onSubmit={async (values) => {
-                await addRoomItem({
-                  room_id: room.id,
-                  name: values.name,
-                  quantity: values.quantity,
-                  condition: values.condition,
-                  notes: values.notes || null,
-                });
-                await refresh();
-                toast.success("Barang ditambahkan");
-              }}
-            />
-          ) : null}
+              ) : null}
+              <ItemFormDialog
+                trigger={
+                  <Button className="h-11 flex-1 sm:flex-none">
+                    <Plus className="mr-2 h-4 w-4" /> Tambah barang
+                  </Button>
+                }
+                title="Tambah barang kamar"
+                description={`Barang baru untuk kamar ${room.number}.`}
+                folder={`kamar/${room.number}`}
+                onSubmit={async (values) => {
+                  await addRoomItem({ ...itemPayload(values), room_id: room.id });
+                  await refresh();
+                  toast.success("Barang ditambahkan");
+                }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {rooms.isLoading ? (
-        <p className="text-sm text-muted-foreground">Memuat...</p>
+        <p className="mt-4 text-sm text-muted-foreground">Memuat...</p>
       ) : !room ? (
-        <p className="text-sm text-muted-foreground">Kamar {nomor} tidak ditemukan.</p>
+        <p className="mt-4 text-sm text-muted-foreground">Kamar {nomor} tidak ditemukan.</p>
       ) : roomItems.length === 0 ? (
-        <div className="gold-card rounded-xl p-8 text-center">
+        <div className="gold-card mt-4 rounded-xl p-8 text-center">
           <p className="font-display text-xl">Belum ada barang tercatat</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Tambahkan barang satu per satu atau isi dengan daftar item standar.
           </p>
         </div>
+      ) : list.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">Tidak ada barang yang cocok.</p>
       ) : (
-        <ul className="space-y-3">
-          {roomItems.map((item) => (
-            <li key={item.id} className="gold-card rounded-xl p-4">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="truncate font-medium">{item.name}</p>
-                    <ConditionBadge condition={item.condition} />
-                  </div>
-                  {item.notes ? (
-                    <p className="mt-1 text-xs text-muted-foreground">{item.notes}</p>
-                  ) : null}
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={`Kurangi ${item.name}`}
-                    className="h-8 w-8 border-gold-line"
-                    disabled={item.quantity <= 0}
-                    onClick={() =>
-                      mutate.mutate(() =>
-                        updateRoomItem(item.id, { quantity: Math.max(0, item.quantity - 1) }),
-                      )
-                    }
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-9 text-center text-base font-semibold tabular-nums">
-                    {item.quantity}
-                  </span>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={`Tambah ${item.name}`}
-                    className="h-8 w-8 border-gold-line"
-                    onClick={() =>
-                      mutate.mutate(() => updateRoomItem(item.id, { quantity: item.quantity + 1 }))
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-
+        <ul className="mt-2 space-y-3">
+          {list.map((item) => (
+            <InventoryItemCard
+              key={item.id}
+              name={item.name}
+              condition={item.condition}
+              quantity={item.quantity}
+              notes={item.notes}
+              vendor={item.vendor}
+              purchasePrice={item.purchase_price}
+              warrantyUntil={item.warranty_until}
+              photos={item.photos}
+              receipts={item.receipts}
+              onQuantityChange={(next) =>
+                mutate.mutate(() => updateRoomItem(item.id, { quantity: next }))
+              }
+              actions={
+                <>
                   <ItemFormDialog
                     trigger={
                       <Button
                         size="icon"
                         variant="ghost"
                         aria-label={`Edit ${item.name}`}
-                        className="h-8 w-8"
+                        className="h-11 w-11"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                     }
                     title="Edit barang"
-                    initial={{
-                      name: item.name,
-                      quantity: item.quantity,
-                      condition: item.condition,
-                      notes: item.notes ?? "",
-                    }}
+                    folder={`kamar/${room.number}`}
+                    initial={formInitial(item)}
                     onSubmit={async (values) => {
-                      await updateRoomItem(item.id, {
-                        name: values.name,
-                        quantity: values.quantity,
-                        condition: values.condition,
-                        notes: values.notes || null,
-                      });
+                      await updateRoomItem(item.id, itemPayload(values));
                       await refresh();
                       toast.success("Perubahan disimpan");
                     }}
@@ -203,7 +184,7 @@ function RoomDetail() {
                         size="icon"
                         variant="ghost"
                         aria-label={`Hapus ${item.name}`}
-                        className="h-8 w-8 text-destructive"
+                        className="h-11 w-11 text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -232,9 +213,9 @@ function RoomDetail() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </div>
-              </div>
-            </li>
+                </>
+              }
+            />
           ))}
         </ul>
       )}
