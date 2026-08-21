@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { DoorClosed, Wrench, AlertTriangle, Boxes } from "lucide-react";
+import { DoorClosed, Wrench, AlertTriangle, Boxes, Wallet } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
-import { allRoomItemsQuery, roomsQuery, sharedItemsQuery } from "@/lib/inventory";
+import { ConditionBadge } from "@/components/ConditionBadge";
+import {
+  allRoomItemsQuery,
+  conditionsQuery,
+  formatRupiah,
+  roomsQuery,
+  sharedItemsQuery,
+} from "@/lib/inventory";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,12 +64,26 @@ function Dashboard() {
   const rooms = useQuery(roomsQuery);
   const items = useQuery(allRoomItemsQuery);
   const shared = useQuery(sharedItemsQuery);
+  const conditions = useQuery(conditionsQuery);
 
   const roomItems = items.data ?? [];
   const sharedItems = shared.data ?? [];
+  const semua = [...roomItems, ...sharedItems];
   const totalUnit =
     roomItems.reduce((a, i) => a + i.quantity, 0) + sharedItems.reduce((a, i) => a + i.quantity, 0);
-  const perluPerhatian = [...roomItems, ...sharedItems].filter((i) => i.condition !== "Baik");
+  const perluPerhatian = semua.filter((i) => i.condition !== "Baik");
+  const totalNilai = semua.reduce((a, i) => a + (i.purchase_price ?? 0), 0);
+
+  const perKondisi = new Map<string, number>();
+  for (const item of semua) {
+    perKondisi.set(item.condition, (perKondisi.get(item.condition) ?? 0) + 1);
+  }
+  const daftarKondisi = [
+    ...(conditions.data ?? []),
+    ...[...perKondisi.keys()].filter((c) => !(conditions.data ?? []).includes(c)),
+  ];
+
+  const maksKondisi = Math.max(1, ...[...perKondisi.values()]);
 
   const rusakPerKamar = new Map<string, number>();
   for (const item of roomItems) {
@@ -89,6 +111,48 @@ function Dashboard() {
           tone="danger"
         />
       </div>
+
+      <div className="gold-card mt-4 rounded-xl p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-semibold">Kondisi Barang</h2>
+          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Wallet className="h-4 w-4 text-gold" />
+            Nilai pembelian tercatat: {formatRupiah(totalNilai) ?? "—"}
+          </span>
+        </div>
+        {semua.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Belum ada barang tercatat.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {daftarKondisi.map((name) => {
+              const jumlah = perKondisi.get(name) ?? 0;
+              return (
+                <li key={name} className="flex items-center gap-3">
+                  <div className="w-32 shrink-0 sm:w-40">
+                    <ConditionBadge condition={name} />
+                  </div>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-accent">
+                    <div
+                      className={`h-full rounded-full ${
+                        name === "Baik"
+                          ? "bg-success"
+                          : name === "Rusak"
+                            ? "bg-destructive"
+                            : "bg-warning"
+                      }`}
+                      style={{ width: `${(jumlah / maksKondisi) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-14 text-right text-sm tabular-nums">
+                    {jumlah} <span className="text-muted-foreground">item</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="gold-card rounded-xl p-5">
