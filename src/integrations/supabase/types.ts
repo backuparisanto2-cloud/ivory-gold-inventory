@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      conditions: {
+        Row: {
+          created_at: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       room_items: {
         Row: {
           condition: string
@@ -21,9 +39,15 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          photos: Json
+          purchase_date: string | null
+          purchase_price: number | null
           quantity: number
+          receipts: Json
           room_id: string
           updated_at: string
+          vendor: string | null
+          warranty_until: string | null
         }
         Insert: {
           condition?: string
@@ -31,9 +55,15 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          photos?: Json
+          purchase_date?: string | null
+          purchase_price?: number | null
           quantity?: number
+          receipts?: Json
           room_id: string
           updated_at?: string
+          vendor?: string | null
+          warranty_until?: string | null
         }
         Update: {
           condition?: string
@@ -41,9 +71,15 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          photos?: Json
+          purchase_date?: string | null
+          purchase_price?: number | null
           quantity?: number
+          receipts?: Json
           room_id?: string
           updated_at?: string
+          vendor?: string | null
+          warranty_until?: string | null
         }
         Relationships: [
           {
@@ -91,8 +127,14 @@ export type Database = {
           location: string | null
           name: string
           notes: string | null
+          photos: Json
+          purchase_date: string | null
+          purchase_price: number | null
           quantity: number
+          receipts: Json
           updated_at: string
+          vendor: string | null
+          warranty_until: string | null
         }
         Insert: {
           category?: string
@@ -102,8 +144,14 @@ export type Database = {
           location?: string | null
           name: string
           notes?: string | null
+          photos?: Json
+          purchase_date?: string | null
+          purchase_price?: number | null
           quantity?: number
+          receipts?: Json
           updated_at?: string
+          vendor?: string | null
+          warranty_until?: string | null
         }
         Update: {
           category?: string
@@ -113,8 +161,14 @@ export type Database = {
           location?: string | null
           name?: string
           notes?: string | null
+          photos?: Json
+          purchase_date?: string | null
+          purchase_price?: number | null
           quantity?: number
+          receipts?: Json
           updated_at?: string
+          vendor?: string | null
+          warranty_until?: string | null
         }
         Relationships: []
       }
