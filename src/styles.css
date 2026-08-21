@@ -155,5 +155,20 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+@utility gold-rule {
+  border-bottom: 1px solid var(--gold-line);
+}
+
+@utility gold-card {
+  background-color: var(--card);
+  border: 1px solid var(--gold-line);
+  box-shadow: 0 1px 2px oklch(0.66 0.098 82 / 8%);
 }
