@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FasilitasRouteImport } from './routes/fasilitas'
 import { Route as KamarIndexRouteImport } from './routes/kamar.index'
 import { Route as KamarNomorRouteImport } from './routes/kamar.$nomor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FasilitasRoute = FasilitasRouteImport.update({
+  id: '/fasilitas',
+  path: '/fasilitas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KamarIndexRoute = KamarIndexRouteImport.update({
@@ -31,30 +37,34 @@ const KamarNomorRoute = KamarNomorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/fasilitas': typeof FasilitasRoute
   '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar/': typeof KamarIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/fasilitas': typeof FasilitasRoute
   '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar': typeof KamarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/fasilitas': typeof FasilitasRoute
   '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar/': typeof KamarIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/kamar/$nomor' | '/kamar/'
+  fullPaths: '/' | '/fasilitas' | '/kamar/$nomor' | '/kamar/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/kamar/$nomor' | '/kamar'
-  id: '__root__' | '/' | '/kamar/$nomor' | '/kamar/'
+  to: '/' | '/fasilitas' | '/kamar/$nomor' | '/kamar'
+  id: '__root__' | '/' | '/fasilitas' | '/kamar/$nomor' | '/kamar/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FasilitasRoute: typeof FasilitasRoute
   KamarNomorRoute: typeof KamarNomorRoute
   KamarIndexRoute: typeof KamarIndexRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fasilitas': {
+      id: '/fasilitas'
+      path: '/fasilitas'
+      fullPath: '/fasilitas'
+      preLoaderRoute: typeof FasilitasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kamar/': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FasilitasRoute: FasilitasRoute,
   KamarNomorRoute: KamarNomorRoute,
   KamarIndexRoute: KamarIndexRoute,
 }

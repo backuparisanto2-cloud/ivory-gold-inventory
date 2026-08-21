@@ -142,7 +142,7 @@ export function ItemFormDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Kategori</Label>
-                <Select value={values.category} onValueChange={(v) => set("category", v)}>
+                <Select value={values.category ?? "Umum"} onValueChange={(v) => set("category", v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
