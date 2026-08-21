@@ -79,9 +79,10 @@ function Dashboard() {
     perKondisi.set(item.condition, (perKondisi.get(item.condition) ?? 0) + 1);
   }
   const daftarKondisi = [
-    ...(conditions.data ?? []).map((c) => c.name),
-    ...[...perKondisi.keys()].filter((c) => !(conditions.data ?? []).some((k) => k.name === c)),
+    ...(conditions.data ?? []),
+    ...[...perKondisi.keys()].filter((c) => !(conditions.data ?? []).includes(c)),
   ];
+
   const maksKondisi = Math.max(1, ...[...perKondisi.values()]);
 
   const rusakPerKamar = new Map<string, number>();
