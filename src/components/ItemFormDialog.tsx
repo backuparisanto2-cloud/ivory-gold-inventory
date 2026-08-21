@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Plus } from "lucide-react";
 
 import {
   Dialog,
@@ -20,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CONDITIONS, SHARED_CATEGORIES } from "@/lib/inventory";
+import { PhotoUploader } from "@/components/PhotoUploader";
+import { addCondition, conditionsQuery, SHARED_CATEGORIES } from "@/lib/inventory";
 
 export type ItemFormValues = {
   name: string;
@@ -29,7 +32,30 @@ export type ItemFormValues = {
   notes: string;
   category?: string;
   location?: string;
+  vendor: string;
+  purchase_price: string;
+  purchase_date: string;
+  warranty_until: string;
+  photos: string[];
+  receipts: string[];
 };
+
+function initialValues(initial?: Partial<ItemFormValues>): ItemFormValues {
+  return {
+    name: initial?.name ?? "",
+    quantity: initial?.quantity ?? 1,
+    condition: initial?.condition ?? "Baik",
+    notes: initial?.notes ?? "",
+    category: initial?.category ?? "Umum",
+    location: initial?.location ?? "",
+    vendor: initial?.vendor ?? "",
+    purchase_price: initial?.purchase_price ?? "",
+    purchase_date: initial?.purchase_date ?? "",
+    warranty_until: initial?.warranty_until ?? "",
+    photos: initial?.photos ?? [],
+    receipts: initial?.receipts ?? [],
+  };
+}
 
 export function ItemFormDialog({
   trigger,
@@ -37,6 +63,7 @@ export function ItemFormDialog({
   description,
   initial,
   withCategory = false,
+  folder,
   onSubmit,
 }: {
   trigger: ReactNode;
@@ -44,21 +71,34 @@ export function ItemFormDialog({
   description?: string;
   initial?: Partial<ItemFormValues>;
   withCategory?: boolean;
+  folder: string;
   onSubmit: (values: ItemFormValues) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [values, setValues] = useState<ItemFormValues>({
-    name: initial?.name ?? "",
-    quantity: initial?.quantity ?? 1,
-    condition: initial?.condition ?? "Baik",
-    notes: initial?.notes ?? "",
-    category: initial?.category ?? "Umum",
-    location: initial?.location ?? "",
-  });
+  const [newCondition, setNewCondition] = useState("");
+  const [addingCondition, setAddingCondition] = useState(false);
+  const [values, setValues] = useState<ItemFormValues>(() => initialValues(initial));
+
+  const queryClient = useQueryClient();
+  const conditions = useQuery(conditionsQuery);
+  const conditionList = conditions.data ?? ["Baik", "Perlu Perbaikan", "Rusak"];
+  const options = conditionList.includes(values.condition)
+    ? conditionList
+    : [...conditionList, values.condition];
 
   function set<K extends keyof ItemFormValues>(key: K, value: ItemFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveNewCondition() {
+    const name = newCondition.trim();
+    if (!name) return;
+    await addCondition(name);
+    await queryClient.invalidateQueries({ queryKey: ["conditions"] });
+    set("condition", name);
+    setNewCondition("");
+    setAddingCondition(false);
   }
 
   return (
@@ -67,26 +107,22 @@ export function ItemFormDialog({
       onOpenChange={(next) => {
         setOpen(next);
         if (next) {
-          setValues({
-            name: initial?.name ?? "",
-            quantity: initial?.quantity ?? 1,
-            condition: initial?.condition ?? "Baik",
-            notes: initial?.notes ?? "",
-            category: initial?.category ?? "Umum",
-            location: initial?.location ?? "",
-          });
+          setValues(initialValues(initial));
+          setAddingCondition(false);
+          setNewCondition("");
         }
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-md border-gold-line">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92dvh] max-w-md flex-col gap-0 border-gold-line p-0 sm:max-h-[88vh]">
+        <DialogHeader className="border-b border-gold-line px-5 pt-5 pb-4 text-left">
           <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
 
         <form
-          className="space-y-4"
+          id="item-form"
+          className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4"
           onSubmit={async (event) => {
             event.preventDefault();
             if (!values.name.trim()) return;
@@ -116,6 +152,7 @@ export function ItemFormDialog({
               <Input
                 id="item-qty"
                 type="number"
+                inputMode="numeric"
                 min={0}
                 value={values.quantity}
                 onChange={(e) => set("quantity", Math.max(0, Number(e.target.value) || 0))}
@@ -128,7 +165,7 @@ export function ItemFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONDITIONS.map((c) => (
+                  {options.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
@@ -137,6 +174,28 @@ export function ItemFormDialog({
               </Select>
             </div>
           </div>
+
+          {addingCondition ? (
+            <div className="flex gap-2">
+              <Input
+                value={newCondition}
+                onChange={(e) => setNewCondition(e.target.value)}
+                placeholder="Kondisi baru, mis. Hilang"
+                aria-label="Kondisi baru"
+              />
+              <Button type="button" size="icon" onClick={saveNewCondition} aria-label="Simpan kondisi">
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingCondition(true)}
+              className="inline-flex items-center gap-1 text-xs text-gold hover:underline"
+            >
+              <Plus className="h-3.5 w-3.5" /> Tambah pilihan kondisi
+            </button>
+          )}
 
           {withCategory ? (
             <div className="grid grid-cols-2 gap-3">
@@ -167,6 +226,69 @@ export function ItemFormDialog({
             </div>
           ) : null}
 
+          <div className="space-y-4 rounded-lg border border-gold-line p-3">
+            <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+              Data pembelian
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="item-vendor">Vendor / toko</Label>
+              <Input
+                id="item-vendor"
+                value={values.vendor}
+                onChange={(e) => set("vendor", e.target.value)}
+                placeholder="Contoh: Toko Elektronik Sejahtera"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="item-price">Harga pembelian (Rp)</Label>
+              <Input
+                id="item-price"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={values.purchase_price}
+                onChange={(e) => set("purchase_price", e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="item-date">Tgl. pembelian</Label>
+                <Input
+                  id="item-date"
+                  type="date"
+                  value={values.purchase_date}
+                  onChange={(e) => set("purchase_date", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="item-warranty">Garansi s/d</Label>
+                <Input
+                  id="item-warranty"
+                  type="date"
+                  value={values.warranty_until}
+                  onChange={(e) => set("warranty_until", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <PhotoUploader
+            label="Foto barang"
+            hint="Otomatis dikompres ke WebP maks 300KB"
+            folder={`${folder}/barang`}
+            paths={values.photos}
+            onChange={(next) => set("photos", next)}
+          />
+
+          <PhotoUploader
+            label="Foto nota / invoice / kuitansi"
+            hint="Bisa lebih dari satu lembar"
+            folder={`${folder}/nota`}
+            paths={values.receipts}
+            onChange={(next) => set("receipts", next)}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="item-notes">Catatan</Label>
             <Textarea
@@ -177,13 +299,13 @@ export function ItemFormDialog({
               rows={2}
             />
           </div>
-
-          <DialogFooter>
-            <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-              {saving ? "Menyimpan..." : "Simpan"}
-            </Button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter className="border-t border-gold-line px-5 py-3">
+          <Button type="submit" form="item-form" disabled={saving} className="h-11 w-full">
+            {saving ? "Menyimpan..." : "Simpan"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
