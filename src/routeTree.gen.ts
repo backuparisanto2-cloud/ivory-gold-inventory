@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KamarIndexRouteImport } from './routes/kamar.index'
+import { Route as KamarNomorRouteImport } from './routes/kamar.$nomor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const KamarIndexRoute = KamarIndexRouteImport.update({
   path: '/kamar/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KamarNomorRoute = KamarNomorRouteImport.update({
+  id: '/kamar/$nomor',
+  path: '/kamar/$nomor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar/': typeof KamarIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar': typeof KamarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/kamar/$nomor': typeof KamarNomorRoute
   '/kamar/': typeof KamarIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/kamar/'
+  fullPaths: '/' | '/kamar/$nomor' | '/kamar/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/kamar'
-  id: '__root__' | '/' | '/kamar/'
+  to: '/' | '/kamar/$nomor' | '/kamar'
+  id: '__root__' | '/' | '/kamar/$nomor' | '/kamar/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  KamarNomorRoute: typeof KamarNomorRoute
   KamarIndexRoute: typeof KamarIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KamarIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kamar/$nomor': {
+      id: '/kamar/$nomor'
+      path: '/kamar/$nomor'
+      fullPath: '/kamar/$nomor'
+      preLoaderRoute: typeof KamarNomorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  KamarNomorRoute: KamarNomorRoute,
   KamarIndexRoute: KamarIndexRoute,
 }
 export const routeTree = rootRouteImport
