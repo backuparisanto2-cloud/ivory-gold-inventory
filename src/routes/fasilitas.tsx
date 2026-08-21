@@ -161,7 +161,7 @@ function SharedFacilities() {
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="w-8 text-center font-display text-lg font-semibold">
+                  <span className="w-9 text-center text-base font-semibold tabular-nums">
                     {item.quantity}
                   </span>
                   <Button
