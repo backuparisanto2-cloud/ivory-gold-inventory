@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      room_items: {
+        Row: {
+          condition: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          quantity: number
+          room_id: string
+          updated_at: string
+        }
+        Insert: {
+          condition?: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          quantity?: number
+          room_id: string
+          updated_at?: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          quantity?: number
+          room_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_items_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          floor: number
+          id: string
+          notes: string | null
+          number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          floor: number
+          id?: string
+          notes?: string | null
+          number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          floor?: number
+          id?: string
+          notes?: string | null
+          number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shared_items: {
+        Row: {
+          category: string
+          condition: string
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
